@@ -26,6 +26,7 @@ ID3ContextStandard = ID3.Classifier(S=data, featureNames=featureNames, labels=la
 ID3ContextME = ID3.Classifier(S=data, featureNames=featureNames, labels=labels, uniqueLabels=uniqueLabels, method=ID3.MAJORITY_ERROR)
 ID3ContextGI = ID3.Classifier(S=data, featureNames=featureNames, labels=labels, uniqueLabels=uniqueLabels, method=ID3.GINI_INDEX)
 
+print("Testing Data")
 # run algorithm to build my tree
 for i in range(6):
     print("maxDepth=", i+1)
@@ -44,6 +45,27 @@ ID3ContextME.ID3()
 ID3ContextME.testData("DecisionTrees\HW1Data\car\\train.csv", 6, "ME\t")
 ID3ContextGI.ID3()
 ID3ContextGI.testData("DecisionTrees\HW1Data\car\\train.csv", 6, "GI\t")
+print("\n")
+
+print("Training Data")
+# run algorithm to build my tree
+for i in range(6):
+    print("maxDepth=", i+1)
+    ID3ContextStandard.ID3(i + 1)
+    ID3ContextStandard.testData("DecisionTrees\HW1Data\car\\test.csv", 6, "IG\t")
+    ID3ContextME.ID3(i + 1)
+    ID3ContextME.testData("DecisionTrees\HW1Data\car\\test.csv", 6, "ME\t")
+    ID3ContextGI.ID3(i + 1)
+    ID3ContextGI.testData("DecisionTrees\HW1Data\car\\test.csv", 6, "GI\t")
+    print("\n")
+
+print("maxDepth=no_limit")
+ID3ContextStandard.ID3()
+ID3ContextStandard.testData("DecisionTrees\HW1Data\car\\test.csv", 6, "IG\t")
+ID3ContextME.ID3()
+ID3ContextME.testData("DecisionTrees\HW1Data\car\\test.csv", 6, "ME\t")
+ID3ContextGI.ID3()
+ID3ContextGI.testData("DecisionTrees\HW1Data\car\\test.csv", 6, "GI\t")
 print("\n")
 
 ### BANK EXAMPLE ###
