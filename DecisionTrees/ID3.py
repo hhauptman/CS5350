@@ -1,3 +1,4 @@
+import csv
 import math
 from collections import deque
 
@@ -16,8 +17,8 @@ class Node:
 
 # sets up necessary information to run the algorithm
 class Classifier:
-    def __init__(self, S, featureNames, labels, uniqueLabels, method=ENTROPY, maxDepth=-1):
-        self.maxDepth = maxDepth
+    def __init__(self, S, featureNames, labels, uniqueLabels, method=ENTROPY, ):
+        self.maxDepth = -1
         self.root = None
 
         self.method = method
@@ -94,16 +95,17 @@ class Classifier:
         return self.featureNames[maxGainIndex], maxGainIndex
 
     # overhead for the recursive call to ID3 algorithm
-    def ID3(self):
+    def ID3(self, maxDepth=-1):
+        self.maxDepth = maxDepth
         sIndexes = [i for i in range(len(self.S))]
         featureIndexes = [i for i in range(len(self.featureNames))]
-        self.root = self.ID3Recurse(sIndexes, featureIndexes, self.root)
+        self.root = self.ID3Recurse(sIndexes, featureIndexes, self.root, 0)
 
     # recursive id3 function
-    def ID3Recurse(self, sIndexes, featureIndexes, node):
+    def ID3Recurse(self, sIndexes, featureIndexes, node, depth):
         if not node:
             node = Node() 
-            node.depth = 0
+            node.depth = depth+1
 
         nodeLabels = [self.labels[i] for i in sIndexes]
         if len(set(nodeLabels)) == 1: # all labels the same (pure)
@@ -123,27 +125,39 @@ class Classifier:
         # values of the "best" feature
         maxFeatureVals = list(set([self.S[i][maxIndex] for i in sIndexes]))
 
-        for val in maxFeatureVals:
-            child = Node()
+        if self.maxDepth == -1 or node.depth < self.maxDepth :
+            for val in maxFeatureVals:
+                child = Node()
 
-            # add branch (feature)
-            child.value = val  
-            child.depth = node.depth + 1
-            node.children.append(child) 
+                # add branch (feature)
+                child.value = val  
+                child.depth = node.depth + 1
+                node.children.append(child) 
 
-            childIndexes = [i for i in sIndexes if self.S[i][maxIndex] == val]
-            
-            if not childIndexes:  
-                child.next = max(set(nodeLabels), key=nodeLabels.count) # the next child is set to the node with the most labels
-            else:
-                if featureIndexes and maxIndex in featureIndexes:
-                    featureIndexes.pop(featureIndexes.index(maxIndex)) 
+                childIndexes = [i for i in sIndexes if self.S[i][maxIndex] == val]
                 
-                if self.maxDepth == -1 or child.depth < self.maxDepth :
+                if not childIndexes:  
+                    child.next = max(set(nodeLabels), key=nodeLabels.count) # the next child is set to the node with the most labels
+                else:
+                    if featureIndexes and maxIndex in featureIndexes:
+                        featureIndexes.pop(featureIndexes.index(maxIndex)) 
+                    
                     # recursively call the algorithm
-                    child.next = self.ID3Recurse(childIndexes, featureIndexes, child.next)
+                    child.next = self.ID3Recurse(childIndexes, featureIndexes, child.next, node.depth)
 
         return node
+    
+    def predict(self, prediction, featureValues):
+        node = self.root
+        features = self.featureNames
+        while(node.children):
+            for c in node.children: # check each child for the correct branch
+                if c.value == featureValues[features.index(node.value)]:
+                    node = c.next 
+                    break
+        if node.value == prediction:
+            return 1
+        return 0
 
     def printTree(self):
         print("Tree method =", self.method)
@@ -162,3 +176,16 @@ class Classifier:
             elif node.next:
                 print("Next node: ", node.next)
         print("\n\n")
+
+    def testData(self, filename, numFeatures, msg):
+        accurate = 0
+        inaccurate = 0
+        with open(filename, mode='r') as file:
+            csvReader = csv.reader(file)
+            for row in csvReader:
+                if self.predict(row[numFeatures], row[:numFeatures]) == 1:
+                    accurate += 1
+                else:
+                    inaccurate +=1
+            #print(accurate, " ", inaccurate)
+        print(msg, "{:.4f}%".format(100*accurate/(accurate + inaccurate)))
